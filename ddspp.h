@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 // Sources
 // https://docs.microsoft.com/en-us/windows/uwp/gaming/complete-code-for-ddstextureloader
@@ -352,21 +352,21 @@ namespace ddspp
 
 	struct Descriptor
 	{
-		DXGIFormat format;
-		TextureType type;
-		unsigned int width;
-		unsigned int height;
-		unsigned int depth;
-		unsigned int numMips;
-		unsigned int arraySize;
-		unsigned int rowPitch; // Row pitch for mip 0
-		unsigned int depthPitch; // Size of mip 0
-		unsigned int bitsPerPixelOrBlock; // If compressed bits per block, else bits per pixel
-		unsigned int blockWidth; // Width of block in pixels (1 if uncompressed)
-		unsigned int blockHeight;// Height of block in pixels (1 if uncompressed)
-		bool compressed;
-		bool srgb;
-		unsigned int headerSize; // Actual size of header, use this to get to image data
+		DXGIFormat      format;
+		TextureType     type;
+		unsigned int    width;
+		unsigned int    height;
+		unsigned int    depth;
+		unsigned int    numMips;
+		unsigned int    arraySize;
+		unsigned int    rowPitch;               // Row pitch for mip 0
+		unsigned int    depthPitch;             // Size of mip 0
+		unsigned int    bitsPerPixelOrBlock;    // If compressed bits per block, else bits per pixel
+		unsigned int    blockWidth;             // Width of block in pixels (1 if uncompressed)
+		unsigned int    blockHeight;            // Height of block in pixels (1 if uncompressed)
+		bool            compressed;
+		bool            srgb;
+		unsigned int    headerSize;             // Actual size of header, use this to get to image data
 	};
 
 	inline ddspp_constexpr bool is_dxt10(const Header& header)
@@ -613,9 +613,9 @@ namespace ddspp
 		return get_row_pitch(desc.width, desc.bitsPerPixelOrBlock, desc.blockWidth, mip);
 	}
 
-	inline Result decode_header(unsigned char* sourceData, Descriptor& desc)
+	inline Result decode_header(const unsigned char* sourceData, Descriptor& desc)
 	{
-		unsigned int magic = *reinterpret_cast<unsigned int*>(sourceData); // First 4 bytes are the magic DDS number
+		unsigned int magic = *reinterpret_cast<const unsigned int*>(sourceData); // First 4 bytes are the magic DDS number
 
 		if (magic != DDS_MAGIC)
 		{
@@ -739,69 +739,69 @@ namespace ddspp
 			{
 				switch(ddspf.RGBBitCount)
 				{
-				case 32:
-					if(is_rgba_mask(ddspf, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000))
-					{
-						desc.format = R8G8B8A8_UNORM;
-					}
-					else if(is_rgba_mask(ddspf, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000))
-					{
-						desc.format = B8G8R8A8_UNORM;
-					}
-					else if(is_rgba_mask(ddspf, 0x00ff0000, 0x0000ff00, 0x000000ff, 0x00000000))
-					{
-						desc.format = B8G8R8X8_UNORM;
-					}
+				    case 32:
+					    if(is_rgba_mask(ddspf, 0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000))
+					    {
+						    desc.format = R8G8B8A8_UNORM;
+					    }
+					    else if(is_rgba_mask(ddspf, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000))
+					    {
+						    desc.format = B8G8R8A8_UNORM;
+					    }
+					    else if(is_rgba_mask(ddspf, 0x00ff0000, 0x0000ff00, 0x000000ff, 0x00000000))
+					    {
+						    desc.format = B8G8R8X8_UNORM;
+					    }
 
-					// No DXGI format maps to (0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000) aka D3DFMT_X8B8G8R8
-					// No DXGI format maps to (0x000003ff, 0x000ffc00, 0x3ff00000, 0xc0000000) aka D3DFMT_A2R10G10B10
+					    // No DXGI format maps to (0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000) aka D3DFMT_X8B8G8R8
+					    // No DXGI format maps to (0x000003ff, 0x000ffc00, 0x3ff00000, 0xc0000000) aka D3DFMT_A2R10G10B10
 
-					// Note that many common DDS reader/writers (including D3DX) swap the
-					// the RED/BLUE masks for 10:10:10:2 formats. We assume
-					// below that the 'backwards' header mask is being used since it is most
-					// likely written by D3DX. The more robust solution is to use the 'DX10'
-					// header extension and specify the DXGI_FORMAT_R10G10B10A2_UNORM format directly
+					    // Note that many common DDS reader/writers (including D3DX) swap the
+					    // the RED/BLUE masks for 10:10:10:2 formats. We assume
+					    // below that the 'backwards' header mask is being used since it is most
+					    // likely written by D3DX. The more robust solution is to use the 'DX10'
+					    // header extension and specify the DXGI_FORMAT_R10G10B10A2_UNORM format directly
 
-					// For 'correct' writers, this should be 0x000003ff, 0x000ffc00, 0x3ff00000 for RGB data
-					else if (is_rgba_mask(ddspf, 0x3ff00000, 0x000ffc00, 0x000003ff, 0xc0000000))
-					{
-						desc.format = R10G10B10A2_UNORM;
-					}
-					else if (is_rgba_mask(ddspf, 0x0000ffff, 0xffff0000, 0x00000000, 0x00000000))
-					{
-						desc.format = R16G16_UNORM;
-					}
-					else if (is_rgba_mask(ddspf, 0xffffffff, 0x00000000, 0x00000000, 0x00000000))
-					{
-						// The only 32-bit color channel format in D3D9 was R32F
-						desc.format = R32_FLOAT; // D3DX writes this out as a FourCC of 114
-					}
-					break;
-				case 24:
-					if(is_rgb_mask(ddspf, 0x00ff0000, 0x0000ff00, 0x000000ff))
-					{
-						desc.format = B8G8R8X8_UNORM;
-					}
-					break;
-				case 16:
-					if (is_rgba_mask(ddspf, 0x7c00, 0x03e0, 0x001f, 0x8000))
-					{
-						desc.format = B5G5R5A1_UNORM;
-					}
-					else if (is_rgba_mask(ddspf, 0xf800, 0x07e0, 0x001f, 0x0000))
-					{
-						desc.format = B5G6R5_UNORM;
-					}
-					else if (is_rgba_mask(ddspf, 0x0f00, 0x00f0, 0x000f, 0xf000))
-					{
-						desc.format = B4G4R4A4_UNORM;
-					}
-					// No DXGI format maps to (0x7c00, 0x03e0, 0x001f, 0x0000) aka D3DFMT_X1R5G5B5.
-					// No DXGI format maps to (0x0f00, 0x00f0, 0x000f, 0x0000) aka D3DFMT_X4R4G4B4.
-					// No 3:3:2, 3:3:2:8, or paletted DXGI formats aka D3DFMT_A8R3G3B2, D3DFMT_R3G3B2, D3DFMT_P8, D3DFMT_A8P8, etc.
-					break;
-				default:
-					break;
+					    // For 'correct' writers, this should be 0x000003ff, 0x000ffc00, 0x3ff00000 for RGB data
+					    else if (is_rgba_mask(ddspf, 0x3ff00000, 0x000ffc00, 0x000003ff, 0xc0000000))
+					    {
+						    desc.format = R10G10B10A2_UNORM;
+					    }
+					    else if (is_rgba_mask(ddspf, 0x0000ffff, 0xffff0000, 0x00000000, 0x00000000))
+					    {
+						    desc.format = R16G16_UNORM;
+					    }
+					    else if (is_rgba_mask(ddspf, 0xffffffff, 0x00000000, 0x00000000, 0x00000000))
+					    {
+						    // The only 32-bit color channel format in D3D9 was R32F
+						    desc.format = R32_FLOAT; // D3DX writes this out as a FourCC of 114
+					    }
+					    break;
+				    case 24:
+					    if(is_rgb_mask(ddspf, 0x00ff0000, 0x0000ff00, 0x000000ff))
+					    {
+						    desc.format = B8G8R8X8_UNORM;
+					    }
+					    break;
+				    case 16:
+					    if (is_rgba_mask(ddspf, 0x7c00, 0x03e0, 0x001f, 0x8000))
+					    {
+						    desc.format = B5G5R5A1_UNORM;
+					    }
+					    else if (is_rgba_mask(ddspf, 0xf800, 0x07e0, 0x001f, 0x0000))
+					    {
+						    desc.format = B5G6R5_UNORM;
+					    }
+					    else if (is_rgba_mask(ddspf, 0x0f00, 0x00f0, 0x000f, 0xf000))
+					    {
+						    desc.format = B4G4R4A4_UNORM;
+					    }
+					    // No DXGI format maps to (0x7c00, 0x03e0, 0x001f, 0x0000) aka D3DFMT_X1R5G5B5.
+					    // No DXGI format maps to (0x0f00, 0x00f0, 0x000f, 0x0000) aka D3DFMT_X4R4G4B4.
+					    // No 3:3:2, 3:3:2:8, or paletted DXGI formats aka D3DFMT_A8R3G3B2, D3DFMT_R3G3B2, D3DFMT_P8, D3DFMT_A8P8, etc.
+					    break;
+				    default:
+					    break;
 				}
 			}
 			else if (ddspf.flags & DDS_LUMINANCE)
